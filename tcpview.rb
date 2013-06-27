@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
-# TCP sockets grouped by process 
+# TCP sockets grouped by process. Colors provide emphasis on 
+# destination/listening port numbers
 
 lsof_result = `sudo lsof -i -P | grep TCP`
 #ps_result = `sudo ps aux`
@@ -32,27 +33,42 @@ lines_grouped.each do |process_info|
       print("  localhost")
       print("\x1b[0m")
       print(":")
-      print("\x1b[38;5;39m")
+      print("\x1b[38;5;69m")
       print(from_port)
       print("\x1b[0m")
 
       print(" -> ")
 
-      print("\x1b[38;5;69m")
+      print("\x1b[38;5;68m")
       print(to)
       print("\x1b[0m")
       print(":")
-      print("\x1b[38;5;39m")
+      print("\x1b[38;5;72m")
       print(to_port)
       print("\x1b[0m")
       
       print("\x1b[38;5;244m")
-      print(" #{process_connection[-1]}".downcase)
+      print(" #{connection_state}".downcase)
       print("\x1b[0m")
 
       puts ""
     else
-      puts "  #{process_connection[-2]} #{process_connection[-1]}"
+      host_name, port = connections.split(':')
+
+      print("\x1b[38;5;69m")
+      print("  #{host_name}")
+      print("\x1b[0m")
+      print(":")
+      print("\x1b[38;5;72m")
+      print(port)
+      print("\x1b[0m")
+      
+      print("\x1b[38;5;244m")
+      print(" #{connection_state}".downcase)
+      print("\x1b[0m")
+      
+      print("\r\n")
+      #puts "  #{connections} #{connection_state.downcase}"
     end
   end
 end
