@@ -1,19 +1,21 @@
 #!/usr/bin/env ruby
 
 # TCP sockets grouped by process. Colors provide emphasis on 
-# destination/listening port numbers
+# destination & listening port numbers
 
-lsof_result = `sudo lsof -i -P | grep TCP`
-#ps_result = `sudo ps aux`
+lsof_result = `sudo lsof +c 0 -i -P | grep TCP`
 lines = lsof_result.lines.collect { |line| line.split(' ') }
 lines_grouped = lines.group_by { |line| line[0] }
 
-lines_grouped.each do |process_info|
-  process_name, process_connections = process_info
+lines_grouped.each do |process_name, process_connections|
   print("\x1b[38;5;27m")
   print("#{process_name} (#{process_connections[0][1]})")
   print("\x1b[0m\r\n")
-  
+ 
+  process_connections.sort! do |a,b|
+    a[-2] <=> b[-2]
+  end
+
   process_connections.each do |process_connection|
     process_name, pid, user_name, 
     file_descripter, ip_type, device_id,
@@ -48,7 +50,7 @@ lines_grouped.each do |process_info|
       print("\x1b[0m")
       
       print("\x1b[38;5;244m")
-      print(" #{connection_state}".downcase)
+      print(" #{connection_state.downcase}")
       print("\x1b[0m")
 
       puts ""
