@@ -1,7 +1,25 @@
 #!/usr/bin/env ruby
 
-# TCP sockets grouped by process. Colors provide emphasis on 
-# destination & listening port numbers
+# A tool for examining outbound and inbound TCP connections
+# It assumes you have a 256 color capable terminal
+
+LISTENING_COLOR = 69
+PORT_COLOR = 110
+CONNECTED_COLOR = 36
+WAITING_TO_BE_CLOSED_COLOR = 181
+CLOSED_COLOR = 244
+
+def print_color(connection_state)
+  if connection_state == '(established)'
+    print("\x1b[38;5;#{CONNECTED_COLOR}m")
+  elsif connection_state == '(close_wait)'
+    print("\x1b[38;5;#{WAITING_TO_BE_CLOSED_COLOR}m")
+  elsif connection_state == '(closed)'
+    print("\x1b[38;5;#{CLOSED_COLOR}m")
+  else
+    print("\x1b[38;5;#{LISTENING_COLOR}m")
+  end
+end
 
 lsof_result = `sudo lsof +c 0 -i -P | grep TCP`
 lines = lsof_result.lines.collect { |line| line.split(' ') }
@@ -17,10 +35,13 @@ lines_grouped.each do |process_name, process_connections|
   end
 
   process_connections.each do |process_connection|
+    # unpack the list 
     process_name, pid, user_name, 
     file_descripter, ip_type, device_id,
     size, node_type, connections, 
     connection_state = process_connection
+
+    connection_state = connection_state.downcase()
 
     connections = process_connection[-2]
     if connections.include? "->"
@@ -31,46 +52,42 @@ lines_grouped.each do |process_name, process_connections|
         next
       end
 
-      print("\x1b[38;5;69m")
+      print_color(connection_state)
       print("  localhost")
       print("\x1b[0m")
       print(":")
-      print("\x1b[38;5;69m")
+      print_color(connection_state)
       print(from_port)
       print("\x1b[0m")
 
+      print("\x1b[38;5;249m")
       print(" -> ")
 
-      print("\x1b[38;5;68m")
+      print_color(connection_state)
       print(to)
       print("\x1b[0m")
       print(":")
-      print("\x1b[38;5;72m")
+      print_color(connection_state)
       print(to_port)
       print("\x1b[0m")
       
-      print("\x1b[38;5;244m")
-      print(" #{connection_state.downcase}")
-      print("\x1b[0m")
-
       puts ""
     else
       host_name, port = connections.split(':')
 
-      print("\x1b[38;5;69m")
+      print("\x1b[38;5;#{LISTENING_COLOR}m")
       print("  #{host_name}")
       print("\x1b[0m")
       print(":")
-      print("\x1b[38;5;72m")
+      print("\x1b[38;5;#{LISTENING_COLOR}m")
       print(port)
       print("\x1b[0m")
       
-      print("\x1b[38;5;244m")
-      print(" #{connection_state}".downcase)
-      print("\x1b[0m")
+      #print("\x1b[38;5;#{CLOSED_COLOR}m")
+      #print(" #{connection_state}".downcase)
+      #print("\x1b[0m")
       
       print("\r\n")
-      #puts "  #{connections} #{connection_state.downcase}"
     end
   end
 end
