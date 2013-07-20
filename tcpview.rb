@@ -2,7 +2,7 @@
 
 # A tool for summarizing outbound and inbound TCP connections.
 # If you don't have a 256 color terminal I feel bad for you son, 
-# I got 99 problems and an 8 color terminal ain't one.
+# I got 99 problems and an 8-color-terminal ain't one.
 
 PROCESS_NAME_COLOR = 27
 PORT_COLOR = 110
@@ -10,17 +10,27 @@ CONNECTED_COLOR = 36
 WAITING_TO_BE_CLOSED_COLOR = 181
 CLOSED_COLOR = 244
 LISTENING_COLOR = 69
+COLON_COLOR = 255
+
+connected_count = 0
+waiting_to_be_closed_count = 0
+closed_count = 0
+listening_count = 0
 
 def print_color(connection_state)
   if connection_state == '(established)'
     print("\x1b[38;5;#{CONNECTED_COLOR}m")
-  elsif connection_state == '(close_wait)'
+  elsif ['(close_wait)', '(time_wait)'].include? connection_state 
     print("\x1b[38;5;#{WAITING_TO_BE_CLOSED_COLOR}m")
   elsif connection_state == '(closed)'
     print("\x1b[38;5;#{CLOSED_COLOR}m")
   else
     print("\x1b[38;5;#{LISTENING_COLOR}m")
   end
+end
+
+def end_color()
+  print "\x1b[0m"
 end
 
 def plural_or_singular(number)
@@ -34,11 +44,6 @@ end
 lsof_result = `sudo lsof +c 0 -i -P | grep TCP`
 lines = lsof_result.lines.collect { |line| line.split(' ') }
 lines_grouped = lines.group_by { |line| line[0] }
-
-connected_count = 0
-waiting_to_be_closed_count = 0
-closed_count = 0
-listening_count = 0
 
 lines_grouped.each do |process_name, process_connections|
   print("\x1b[38;5;#{PROCESS_NAME_COLOR}m")
@@ -69,7 +74,7 @@ lines_grouped.each do |process_name, process_connections|
 
       if connection_state == '(established)'
         connected_count += 1
-      elsif connection_state == '(close_wait)'
+      elsif ['(close_wait)', '(time_wait)'].include? connection_state 
         waiting_to_be_closed_count += 1
       elsif connection_state == '(closed)'
         closed_count += 1
@@ -77,23 +82,29 @@ lines_grouped.each do |process_name, process_connections|
 
       print_color(connection_state)
       print("  localhost")
-      print("\x1b[0m")
+      end_color()
+      print("\x1b[38;5;#{COLON_COLOR}m")
       print(":")
       print_color(connection_state)
       print(from_port)
-      print("\x1b[0m")
+      end_color()
 
-      print("\x1b[38;5;249m")
+      print("\x1b[38;5;250m")
       print(" -> ")
 
       print_color(connection_state)
       print(to)
-      print("\x1b[0m")
+      print("\x1b[38;5;#{COLON_COLOR}m")
       print(":")
       print_color(connection_state)
       print(to_port)
-      print("\x1b[0m")
-      
+      end_color
+    
+      if not ['(established)', '(close_wait)', '(closed)', 
+              '(time_wait)'].include? connection_state
+        print " #{connection_state}" 
+      end
+
       puts ""
     else
       listening_count += 1
@@ -102,11 +113,11 @@ lines_grouped.each do |process_name, process_connections|
 
       print("\x1b[38;5;#{LISTENING_COLOR}m")
       print("  #{host_name}")
-      print("\x1b[0m")
+      end_color
       print(":")
       print("\x1b[38;5;#{LISTENING_COLOR}m")
       print(port)
-      print("\x1b[0m")
+      end_color
       
       #print("\x1b[38;5;#{CLOSED_COLOR}m")
       #print(" #{connection_state}".downcase)
@@ -118,10 +129,18 @@ lines_grouped.each do |process_name, process_connections|
 end
 
 puts ""
-puts "Summary:"
-puts "  \x1b[38;5;#{CONNECTED_COLOR}m#{connected_count} active (established) #{plural_or_singular(connected_count)}\x1b[0m"
-puts "  \x1b[38;5;#{WAITING_TO_BE_CLOSED_COLOR}m#{waiting_to_be_closed_count} #{plural_or_singular(waiting_to_be_closed_count)} waiting to be closed (close_waiting)\x1b[0m"
-puts "  \x1b[38;5;#{CLOSED_COLOR}m#{closed_count} recently (closed) #{plural_or_singular(closed_count)}\x1b[0m"
-puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count} ports (listening) for #{plural_or_singular(listening_count)}\x1b[0m"
+puts "\x1b[38;5;254mSummary:\x1b[0m"
+if connected_count > 0
+  puts "  \x1b[38;5;#{CONNECTED_COLOR}m#{connected_count} established #{plural_or_singular(connected_count)}\x1b[0m"
+end
+if waiting_to_be_closed_count > 0
+  puts "  \x1b[38;5;#{WAITING_TO_BE_CLOSED_COLOR}m#{waiting_to_be_closed_count} #{plural_or_singular(waiting_to_be_closed_count)} waiting to be closed\x1b[0m"
+end
+if closed_count > 0
+  puts "  \x1b[38;5;#{CLOSED_COLOR}m#{closed_count} recently closed #{plural_or_singular(closed_count)}\x1b[0m"
+end
+if listening_count
+  puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count} ports listening for #{plural_or_singular(listening_count)}\x1b[0m"
+end
 puts ""
 
