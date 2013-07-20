@@ -3,6 +3,7 @@
 # A tool for summarizing outbound and inbound TCP connections.
 # If you don't have a 256 color terminal I feel bad for you son, 
 # I got 99 problems and an 8-color-terminal ain't one.
+require 'set'
 
 PROCESS_NAME_COLOR = 27
 PORT_COLOR = 110
@@ -15,7 +16,7 @@ COLON_COLOR = 255
 connected_count = 0
 waiting_to_be_closed_count = 0
 closed_count = 0
-listening_count = 0
+listening_count = Set.new
 
 def print_color(connection_state)
   if connection_state == '(established)'
@@ -107,9 +108,8 @@ lines_grouped.each do |process_name, process_connections|
 
       puts ""
     else
-      listening_count += 1
-
       host_name, port = connections.split(':')
+      listening_count.add(port)
 
       print("\x1b[38;5;#{LISTENING_COLOR}m")
       print("  #{host_name}")
@@ -139,8 +139,8 @@ end
 if closed_count > 0
   puts "  \x1b[38;5;#{CLOSED_COLOR}m#{closed_count} recently closed #{plural_or_singular(closed_count)}\x1b[0m"
 end
-if listening_count
-  puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count} ports listening for #{plural_or_singular(listening_count)}\x1b[0m"
+if listening_count.count
+  puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count.count} ports listening for #{plural_or_singular(listening_count.count)}\x1b[0m"
 end
 puts ""
 
