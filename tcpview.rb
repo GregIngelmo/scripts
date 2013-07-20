@@ -1,13 +1,15 @@
 #!/usr/bin/env ruby
 
-# A tool for examining outbound and inbound TCP connections
-# It assumes you have a 256 color capable terminal
+# A tool for summarizing outbound and inbound TCP connections
+# I'm assuming you've got a 256 color capable terminal, if you don't
+# I feel bad for you son, I got 99 problems and a 8 color terminal ain't one.
 
-LISTENING_COLOR = 69
+PROCESS_NAME_COLOR = 27
 PORT_COLOR = 110
 CONNECTED_COLOR = 36
 WAITING_TO_BE_CLOSED_COLOR = 181
 CLOSED_COLOR = 244
+LISTENING_COLOR = 69
 
 def print_color(connection_state)
   if connection_state == '(established)'
@@ -25,8 +27,13 @@ lsof_result = `sudo lsof +c 0 -i -P | grep TCP`
 lines = lsof_result.lines.collect { |line| line.split(' ') }
 lines_grouped = lines.group_by { |line| line[0] }
 
+connected_count = 0
+waiting_to_be_closed_count = 0
+closed_count = 0
+listening_count = 0
+
 lines_grouped.each do |process_name, process_connections|
-  print("\x1b[38;5;27m")
+  print("\x1b[38;5;#{PROCESS_NAME_COLOR}m")
   print("#{process_name} (#{process_connections[0][1]})")
   print("\x1b[0m\r\n")
  
@@ -52,6 +59,14 @@ lines_grouped.each do |process_name, process_connections|
         next
       end
 
+      if connection_state == '(established)'
+        connected_count += 1
+      elsif connection_state == '(close_wait)'
+        waiting_to_be_closed_count += 1
+      elsif connection_state == '(closed)'
+        closed_count += 1
+      end
+
       print_color(connection_state)
       print("  localhost")
       print("\x1b[0m")
@@ -73,6 +88,8 @@ lines_grouped.each do |process_name, process_connections|
       
       puts ""
     else
+      listening_count += 1
+
       host_name, port = connections.split(':')
 
       print("\x1b[38;5;#{LISTENING_COLOR}m")
@@ -91,3 +108,12 @@ lines_grouped.each do |process_name, process_connections|
     end
   end
 end
+
+puts ""
+puts "Summary:"
+puts "  \x1b[38;5;#{CONNECTED_COLOR}m#{connected_count} active (established) connections \x1b[0m"
+puts "  \x1b[38;5;#{WAITING_TO_BE_CLOSED_COLOR}m#{waiting_to_be_closed_count} connection waiting to be closed (close_waiting)\x1b[0m"
+puts "  \x1b[38;5;#{CLOSED_COLOR}m#{closed_count} recently (closed) connections \x1b[0m"
+puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count} ports open (listening) for connections\x1b[0m"
+puts ""
+
