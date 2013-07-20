@@ -129,18 +129,18 @@ lines_grouped.each do |process_name, process_connections|
 end
 
 puts ""
-puts "\x1b[38;5;254mSummary:\x1b[0m"
+puts "\x1b[38;5;254mConnection summary:\x1b[0m"
 if connected_count > 0
-  puts "  \x1b[38;5;#{CONNECTED_COLOR}m#{connected_count} established #{plural_or_singular(connected_count)}\x1b[0m"
+  puts "  \x1b[38;5;#{CONNECTED_COLOR}m#{connected_count} established \x1b[0m"
 end
 if waiting_to_be_closed_count > 0
-  puts "  \x1b[38;5;#{WAITING_TO_BE_CLOSED_COLOR}m#{waiting_to_be_closed_count} #{plural_or_singular(waiting_to_be_closed_count)} waiting to be closed\x1b[0m"
+  puts "  \x1b[38;5;#{WAITING_TO_BE_CLOSED_COLOR}m#{waiting_to_be_closed_count} waiting to be closed\x1b[0m"
 end
 if closed_count > 0
-  puts "  \x1b[38;5;#{CLOSED_COLOR}m#{closed_count} recently closed #{plural_or_singular(closed_count)}\x1b[0m"
+  puts "  \x1b[38;5;#{CLOSED_COLOR}m#{closed_count} recently closed \x1b[0m"
 end
 if listening_count.count
-  puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count.count} ports listening for #{plural_or_singular(listening_count.count)}\x1b[0m"
+  puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count.count} ports listening \x1b[0m"
 end
 puts ""
 
