@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
-# A tool for summarizing outbound and inbound TCP connections
-# I'm assuming you've got a 256 color capable terminal, if you don't
-# I feel bad for you son, I got 99 problems and a 8 color terminal ain't one.
+# A tool for summarizing outbound and inbound TCP connections.
+# If you don't have a 256 color terminal I feel bad for you son, 
+# I got 99 problems and an 8 color terminal ain't one.
 
 PROCESS_NAME_COLOR = 27
 PORT_COLOR = 110
@@ -20,6 +20,14 @@ def print_color(connection_state)
     print("\x1b[38;5;#{CLOSED_COLOR}m")
   else
     print("\x1b[38;5;#{LISTENING_COLOR}m")
+  end
+end
+
+def plural_or_singular(number)
+  if number == 1
+    "connection"
+  else 
+    "connections"
   end
 end
 
@@ -111,9 +119,9 @@ end
 
 puts ""
 puts "Summary:"
-puts "  \x1b[38;5;#{CONNECTED_COLOR}m#{connected_count} active (established) connections \x1b[0m"
-puts "  \x1b[38;5;#{WAITING_TO_BE_CLOSED_COLOR}m#{waiting_to_be_closed_count} connection waiting to be closed (close_waiting)\x1b[0m"
-puts "  \x1b[38;5;#{CLOSED_COLOR}m#{closed_count} recently (closed) connections \x1b[0m"
-puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count} ports open (listening) for connections\x1b[0m"
+puts "  \x1b[38;5;#{CONNECTED_COLOR}m#{connected_count} active (established) #{plural_or_singular(connected_count)}\x1b[0m"
+puts "  \x1b[38;5;#{WAITING_TO_BE_CLOSED_COLOR}m#{waiting_to_be_closed_count} #{plural_or_singular(waiting_to_be_closed_count)} waiting to be closed (close_waiting)\x1b[0m"
+puts "  \x1b[38;5;#{CLOSED_COLOR}m#{closed_count} recently (closed) #{plural_or_singular(closed_count)}\x1b[0m"
+puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count} ports (listening) for #{plural_or_singular(listening_count)}\x1b[0m"
 puts ""
 
