@@ -43,6 +43,7 @@ def plural_or_singular(number)
 end
 
 lsof_result = `sudo lsof +c 0 -i -P | grep TCP`
+ps_result = `ps ax`
 lines = lsof_result.lines.collect { |line| line.split(' ') }
 lines_grouped = lines.group_by { |line| line[0] }
 
@@ -54,7 +55,8 @@ lines_grouped.each do |process_name, process_connections|
   process_connections.sort! do |a,b|
     a[-2] <=> b[-2]
   end
-
+  
+  unique_ports_per_process = Set.new 
   process_connections.each do |process_connection|
     # unpack the list 
     process_name, pid, user_name, 
@@ -63,8 +65,8 @@ lines_grouped.each do |process_name, process_connections|
     connection_state = process_connection
 
     connection_state = connection_state.downcase()
-
     connections = process_connection[-2]
+   
     if connections.include? "->"
       from, from_port, to, to_port = connections.split(/\:|\-\>/)
      
@@ -109,21 +111,25 @@ lines_grouped.each do |process_name, process_connections|
       puts ""
     else
       host_name, port = connections.split(':')
-      listening_count.add(port)
 
-      print("\x1b[38;5;#{LISTENING_COLOR}m")
-      print("  #{host_name}")
-      end_color
-      print(":")
-      print("\x1b[38;5;#{LISTENING_COLOR}m")
-      print(port)
-      end_color
-      
+      if not unique_ports_per_process.include? port
+        unique_ports_per_process.add(port)
+        listening_count.add(port)
+
+        print("\x1b[38;5;#{LISTENING_COLOR}m")
+        print("  #{host_name}")
+        end_color
+        print(":")
+        print("\x1b[38;5;#{LISTENING_COLOR}m")
+        print(port)
+        end_color
+        
+        puts("")
+      end 
       #print("\x1b[38;5;#{CLOSED_COLOR}m")
       #print(" #{connection_state}".downcase)
       #print("\x1b[0m")
       
-      print("\r\n")
     end
   end
 end
@@ -140,7 +146,7 @@ if closed_count > 0
   puts "  \x1b[38;5;#{CLOSED_COLOR}m#{closed_count} recently closed \x1b[0m"
 end
 if listening_count.count
-  puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count.count} ports listening \x1b[0m"
+  puts "  \x1b[38;5;#{LISTENING_COLOR}m#{listening_count.count} ports open \x1b[0m"
 end
 puts ""
 
