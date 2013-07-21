@@ -42,17 +42,21 @@ def plural_or_singular(number)
   end
 end
 
-def get_console_output(lines_grouped)
+def get_console_output(network_connections, processes)
   console_output = ""
   connected_count = 0
   waiting_to_be_closed_count = 0
   closed_count = 0
   listening_count = Set.new
 
-  lines_grouped.each do |process_name, process_connections|
-    console_output << "\x1b[38;5;#{PROCESS_NAME_COLOR}m"
-    console_output << "#{process_name} (#{process_connections[0][1]})"
-    console_output << "\x1b[0m\r\n"
+  network_connections.each do |name, process_connections|
+    process_id = process_connections[0][1]
+    process_name = processes[process_id] || name
+
+    console_output << get_color(PROCESS_NAME_COLOR)
+    console_output << "#{process_name} (#{process_id})"
+    console_output << end_color
+    console_output << "\r\n"
 
     process_connections.sort! do |a,b|
       a[-2] <=> b[-2]
@@ -70,11 +74,6 @@ def get_console_output(lines_grouped)
       if connections.include? "->"
         from, from_port, to, to_port = connections.split(/\:|\-\>/)
        
-        # ignore connections from localhost to localhost from the same process
-        if from.include? 'localhost' and to.include? 'localhost'
-          next
-        end
-
         if connection_state == '(established)'
           connected_count += 1
         elsif ['(close_wait)', '(time_wait)'].include? connection_state 
@@ -141,19 +140,34 @@ def get_console_output(lines_grouped)
     console_output << "  #{get_color(CLOSED_COLOR)}#{closed_count} closed \x1b[0m\r\n"
   end
   if listening_count.count
-    console_output << "  #{get_color(LISTENING_COLOR)}#{listening_count.count} ports open \x1b[0m"
+    console_output << "  #{get_color(LISTENING_COLOR)}#{listening_count.count} listening \x1b[0m"
   end
 
   return console_output
 end
 
-def print_connections_by_process()
-  lsof_result = `sudo lsof +c 0 -i -P | grep TCP`
-  #ps_result = `ps -eo pid,comm`
-  lines = lsof_result.lines.collect { |line| line.split(' ') }
-  lines_grouped = lines.group_by { |line| line[0] }
+def parse_ps_output(ps_output)
+  process_list = ps_output.lines.collect do |line|
+      line = line.strip() 
+      split_pos = line.index(' ')
+      pid = line[0..split_pos].strip()
+      command = line[split_pos..-1].strip()
+      executable = File.basename(command)
+      [pid, executable]
+  end
+  Hash[*process_list.flatten()]
+end
 
-  output = get_console_output(lines_grouped)
+def parse_lsof_output(lsof_output)
+  lines = lsof_output.lines.collect { |line| line.split(' ') }
+  lines.group_by { |line| line[0] }
+end
+
+def print_connections_by_process()
+  network_connections = parse_lsof_output(`sudo lsof +c 0 -i -P | grep TCP`)
+  processes = parse_ps_output(`ps -eo pid,comm`)
+   
+  output = get_console_output(network_connections, processes)
   puts output
 end
 
