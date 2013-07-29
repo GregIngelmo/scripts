@@ -4,7 +4,7 @@
 # If you don't have a 256 color terminal I feel bad for you son, 
 # I got 99 problems and an 8-color-terminal ain't one.
 require 'set'
-require 'pry'
+#require 'pry'
 
 PROCESS_NAME_COLOR = 27
 PORT_COLOR = 110
