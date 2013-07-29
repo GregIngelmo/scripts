@@ -4,6 +4,7 @@
 # If you don't have a 256 color terminal I feel bad for you son, 
 # I got 99 problems and an 8-color-terminal ain't one.
 require 'set'
+require 'pry'
 
 PROCESS_NAME_COLOR = 27
 PORT_COLOR = 110
@@ -13,6 +14,33 @@ CLOSED_COLOR = 244
 LISTENING_COLOR = 69
 COLON_COLOR = 255
 
+class ConnectionInfo
+  attr_accessor :listening_host, :listening_port, 
+                :destination_host, :destination_port,
+                :state, :pid
+
+  def initialize(listening_host, listening_port, destination_host, destination_port, state, pid, is_connected)
+    @listening_host, @listening_port = listening_host, listening_port
+    @destination_host, @destination_port = destination_host, destination_port
+    @state = state
+    @pid = pid
+    @is_connected = is_connected
+  end
+
+  def is_connected?
+    return @is_connected
+  end
+end
+
+class ProcessInfo
+  attr_accessor :pid, :executable, :command
+  attr_reader :connections
+
+  def initialize(pid, command, executable)
+    @pid, @command, @executable = pid, command, executable
+    @connections = []
+  end
+end
 
 def color_for_state(connection_state)
   if connection_state == '(established)'
@@ -42,38 +70,37 @@ def plural_or_singular(number)
   end
 end
 
-def get_console_output(network_connections, processes)
+def get_console_output(network_connections, processes, process_list)
   console_output = ""
   connected_count = 0
   waiting_to_be_closed_count = 0
   closed_count = 0
   listening_count = Set.new
 
-  network_connections.each do |name, process_connections|
-    process_id = process_connections[0][1]
-    process_name = processes[process_id] || name
+  process_list.each do |process|
+    process_id = process.pid
+    process_name = process.executable
 
     console_output << get_color(PROCESS_NAME_COLOR)
-    console_output << "#{process_name} (#{process_id})"
+    console_output << "#{process_name} "
+    console_output << end_color
+    console_output << get_color(PROCESS_NAME_COLOR)
+    console_output << "(#{process_id}) "
+    console_output << end_color
+    console_output << get_color(PROCESS_NAME_COLOR)
+    console_output << process.command
     console_output << end_color
     console_output << "\r\n"
 
-    process_connections.sort! do |a,b|
-      a[-2] <=> b[-2]
-    end
-    
     unique_ports_per_process = Set.new 
-    process_connections.each do |process_connection|
-      # unpack the list 
-      process_name, pid, user_name, file_descriptor, ip_type, device_id,
-      size, node_type, connections, connection_state = process_connection
-
-      connection_state = connection_state.downcase()
-      connections = process_connection[-2]
+    process.connections.each do |connection|
      
-      if connections.include? "->"
-        from, from_port, to, to_port = connections.split(/\:|\-\>/)
-       
+      if connection.is_connected?
+        from_port = connection.listening_port
+        to = connection.destination_host
+        to_port = connection.destination_port
+        connection_state = connection.state.downcase
+
         if connection_state == '(established)'
           connected_count += 1
         elsif ['(close_wait)', '(time_wait)'].include? connection_state 
@@ -104,20 +131,18 @@ def get_console_output(network_connections, processes)
         process_output << "\r\n"
         console_output << process_output
       else
-        host_name, port = connections.split(':')
-
-        if not unique_ports_per_process.include? port
-          unique_ports_per_process.add(port)
-          listening_count.add(port)
+        if not unique_ports_per_process.include? connection.listening_port
+          unique_ports_per_process.add(connection.listening_port)
+          listening_count.add(connection.listening_port)
           
           process_output = ""
 
           process_output << get_color(LISTENING_COLOR)
-          process_output << "  #{host_name}"
+          process_output << "  #{connection.listening_host}"
           process_output << end_color
           process_output << ":"
           process_output << get_color(LISTENING_COLOR)
-          process_output << port
+          process_output << connection.listening_port
           process_output << end_color
         
           process_output << "\r\n" 
@@ -128,7 +153,7 @@ def get_console_output(network_connections, processes)
   end
 
   console_output << "\r\n"
-  console_output << "\x1b[38;5;254mConnections:\x1b[0m\r\n"
+  console_output << "\x1b[38;5;254mTCP connections:\x1b[0m\r\n"
 
   if connected_count > 0
     console_output << "  #{get_color(CONNECTED_COLOR)}#{connected_count} established #{end_color}\r\n"
@@ -147,28 +172,49 @@ def get_console_output(network_connections, processes)
 end
 
 def parse_ps_output(ps_output)
+  processes = []
   process_list = ps_output.lines.collect do |line|
       line = line.strip() 
       split_pos = line.index(' ')
       pid = line[0..split_pos].strip()
       command = line[split_pos..-1].strip()
       executable = File.basename(command)
+      processes << ProcessInfo.new(pid, command, executable)
       [pid, executable]
   end
-  Hash[*process_list.flatten()]
+  return processes
 end
 
 def parse_lsof_output(lsof_output)
-  lines = lsof_output.lines.collect { |line| line.split(' ') }
-  lines.group_by { |line| line[0] }
+  process_connections = []
+
+  lsof_output.lines.each do |line| 
+    process_name, pid, user_name, file_descriptor, ip_type, device_id,
+    size, node_type, connections, connection_state = line.split(' ') 
+    
+    if connections.include? "->"
+      from, from_port, to, to_port = connections.split(/\:|\-\>/)
+      process_connections << ConnectionInfo.new(from, from_port, to, to_port, connection_state, pid, true)
+    else
+      listening_host, listening_port = connections.split(':')
+      process_connections << ConnectionInfo.new(listening_host, listening_port, nil, nil, connection_state, pid, false)
+    end
+  end
+
+  return process_connections
 end
 
 def print_connections_by_process()
-  network_connections = parse_lsof_output(`sudo lsof +c 0 -i -P | grep TCP`)
-  processes = parse_ps_output(`ps -eo pid,comm`)
-   
-  output = get_console_output(network_connections, processes)
+  process_list = parse_ps_output(`sudo ps -eo pid,comm`)
+  connections = parse_lsof_output(`sudo lsof +c 0 -i -P | grep TCP`)
+ 
+  connections = connections.group_by { |pc| pc.pid }
+  process_list.each { |p| p.connections.push(*connections[p.pid]) }
+  process_list.reject! { |p| p.connections.count == 0 }
+
+  output = get_console_output(nil, nil, process_list)
   puts output
 end
 
 print_connections_by_process()
+
