@@ -87,9 +87,13 @@ def get_console_output(network_connections, processes, process_list)
     console_output << get_color(PROCESS_NAME_COLOR)
     console_output << "(#{process_id}) "
     console_output << end_color
-    console_output << get_color(PROCESS_NAME_COLOR)
-    console_output << process.command
-    console_output << end_color
+    
+    if process_name != process.command
+      console_output << get_color(PROCESS_NAME_COLOR)
+      console_output << process.command
+      console_output << end_color
+    end
+    
     console_output << "\r\n"
 
     unique_ports_per_process = Set.new 
