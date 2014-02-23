@@ -141,8 +141,11 @@ def get_console_output(process_list)
         process_output << "\r\n"
         console_output << process_output
       else
-        if not unique_ports_per_process.include? connection.listening_port
-          unique_ports_per_process.add(connection.listening_port)
+        listening_conn = connection.listening_host + connection.listening_port
+        # Hide when a listening connection is listed twice, ex: *:22 
+        # we just want to know that it IS listening
+        if not unique_ports_per_process.include? listening_conn
+          unique_ports_per_process.add(listening_conn)
           listening_count.add(connection.listening_port)
           
           process_output = ""
