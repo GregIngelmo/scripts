@@ -70,7 +70,7 @@ def plural_or_singular(number)
   end
 end
 
-def get_console_output(network_connections, processes, process_list)
+def get_console_output(process_list)
   console_output = ""
   connected_count = 0
   waiting_to_be_closed_count = 0
@@ -216,7 +216,7 @@ def print_connections_by_process()
   process_list.each { |p| p.connections.push(*connections[p.pid]) }
   process_list.reject! { |p| p.connections.count == 0 }
 
-  output = get_console_output(nil, nil, process_list)
+  output = get_console_output(process_list)
   puts output
 end
 
