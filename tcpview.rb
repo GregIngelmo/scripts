@@ -166,19 +166,19 @@ def get_console_output(process_list)
   end
 
   console_output << "\r\n"
-  console_output << "\x1b[38;5;254mTCP connections:\x1b[0m\r\n"
+  # console_output << "\x1b[38;5;254mTCP connections:\x1b[0m\r\n"
 
   if connected_count > 0
-    console_output << "  #{get_color(CONNECTED_COLOR)}#{connected_count} established #{end_color}\r\n"
+    console_output << "#{get_color(CONNECTED_COLOR)}#{connected_count} established#{end_color}, "
   end
   if waiting_to_be_closed_count > 0
-    console_output << "  #{get_color(WAITING_TO_BE_CLOSED_COLOR)}#{waiting_to_be_closed_count} closing #{end_color}\r\n"
+    console_output << "#{get_color(WAITING_TO_BE_CLOSED_COLOR)}#{waiting_to_be_closed_count} closing#{end_color}, "
   end
   if closed_count > 0
-    console_output << "  #{get_color(CLOSED_COLOR)}#{closed_count} closed \x1b[0m\r\n"
+    console_output << "#{get_color(CLOSED_COLOR)}#{closed_count} closed#{end_color}, "
   end
   if listening_count.count
-    console_output << "  #{get_color(LISTENING_COLOR)}#{listening_count.count} listening \x1b[0m"
+    console_output << "#{get_color(LISTENING_COLOR)}#{listening_count.count} listening #{end_color}"
   end
 
   return console_output
