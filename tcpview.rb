@@ -16,13 +16,15 @@ LISTENING_COLOR = 69
 COLON_COLOR = 255
 
 class ConnectionInfo
-  attr_accessor :listening_host, :listening_port, 
+  attr_accessor :listening_host,   :listening_port, 
                 :destination_host, :destination_port,
                 :state, :pid
 
   def initialize(listening_host, listening_port, destination_host, destination_port, state, pid, is_connected)
-    @listening_host, @listening_port = listening_host, listening_port
-    @destination_host, @destination_port = destination_host, destination_port
+    @listening_host = listening_host 
+    @listening_port = listening_port
+    @destination_host = destination_host
+    @destination_port = destination_port
     @state = state
     @pid = pid
     @is_connected = is_connected
@@ -103,9 +105,9 @@ def get_console_output(process_list)
     process.connections.each do |connection|
      
       if connection.is_connected?
-        from_port = connection.listening_port
-        to = connection.destination_host
-        to_port = connection.destination_port
+        from_port        = connection.listening_port
+        to               = connection.destination_host
+        to_port          = connection.destination_port
         connection_state = connection.state.downcase
 
         if connection_state == '(established)'
