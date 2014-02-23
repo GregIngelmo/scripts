@@ -102,6 +102,7 @@ def get_console_output(process_list)
     console_output << "\r\n"
 
     unique_ports_per_process = Set.new 
+    process.connections.sort_by! { |conn| conn.destination_host || ""}
     process.connections.each do |connection|
      
       if connection.is_connected?
