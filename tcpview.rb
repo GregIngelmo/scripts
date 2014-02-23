@@ -186,14 +186,13 @@ end
 
 def parse_ps_output(ps_output)
   processes = []
-  process_list = ps_output.lines.collect do |line|
+  ps_output.lines.each do |line|
       line = line.strip() 
       split_pos = line.index(' ')
       pid = line[0..split_pos].strip()
       command = line[split_pos..-1].strip()
       executable = File.basename(command)
       processes << ProcessInfo.new(pid, command, executable)
-      [pid, executable]
   end
   return processes
 end
