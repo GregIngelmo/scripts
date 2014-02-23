@@ -7,6 +7,7 @@ require 'set'
 #require 'pry'
 
 PROCESS_NAME_COLOR = 27
+PROCESS_ID_COLOR = 32
 PORT_COLOR = 110
 CONNECTED_COLOR = 36
 WAITING_TO_BE_CLOSED_COLOR = 181
@@ -84,9 +85,11 @@ def get_console_output(process_list)
     console_output << get_color(PROCESS_NAME_COLOR)
     console_output << "#{process_name} "
     console_output << end_color
-    console_output << get_color(PROCESS_NAME_COLOR)
-    console_output << "(#{process_id}) "
+    console_output << "("
+    console_output << get_color(PROCESS_ID_COLOR)
+    console_output << process_id
     console_output << end_color
+    console_output << ") "
     
     if process_name != process.command
       console_output << get_color(PROCESS_NAME_COLOR)
