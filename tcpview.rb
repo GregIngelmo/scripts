@@ -80,6 +80,14 @@ def get_console_output(process_list)
   closed_count = 0
   listening_count = Set.new
 
+  # query processes by their port #
+  listening_processes = {}
+  process_list.each do |p|
+    p.connections.each do |c|
+      listening_processes[c.listening_port] = p.executable
+    end
+  end
+
   process_list.each do |process|
     process_id = process.pid
     process_name = process.executable
@@ -126,12 +134,19 @@ def get_console_output(process_list)
         process_output << color_for_state(connection_state) << from_port << end_color
 
         process_output << get_color(250) << " -> " << end_color
-        
+
         process_output << color_for_state(connection_state)
-        process_output << to
+        # print proc executable when a proc connects to another proc
+        if to == "localhost" 
+          if listening_processes.key?(to_port)
+            process_output << listening_processes[to_port]
+          end
+        else
+          process_output << to
+        end
         process_output << get_color(COLON_COLOR)
         process_output << ":"
-        process_output << color_for_state(connection_state)
+        process_output << get_color(65)
         process_output << to_port
         process_output << end_color
         
