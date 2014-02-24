@@ -92,12 +92,13 @@ def get_console_output(process_list)
     console_output << process_id
     console_output << end_color
     console_output << ") "
-    
-    if process_name != process.command
+
+    # uncomment to show full path of process    
+    # if process_name != process.command
       # console_output << get_color(PROCESS_NAME_COLOR)
       # console_output << process.command
       # console_output << end_color
-    end
+    # end
     
     console_output << "\r\n"
 
