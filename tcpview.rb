@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby
 
 # A tool for summarizing outbound and inbound TCP connections.
-# If you don't have a 256 color terminal I feel bad for you son, 
-# I got 99 problems and an 8-color-terminal ain't one.
+#
+# If you're having color problems I feel bad for you, son
+# I got 99 problems but a 8-color term aint one
 require 'set'
-#require 'pry'
 
 PROCESS_NAME_COLOR = 27
-PROCESS_ID_COLOR = 32
+PROCESS_ID_COLOR = 131
 PORT_COLOR = 110
 CONNECTED_COLOR = 36
 WAITING_TO_BE_CLOSED_COLOR = 181
@@ -94,9 +94,9 @@ def get_console_output(process_list)
     console_output << ") "
     
     if process_name != process.command
-      console_output << get_color(PROCESS_NAME_COLOR)
-      console_output << process.command
-      console_output << end_color
+      # console_output << get_color(PROCESS_NAME_COLOR)
+      # console_output << process.command
+      # console_output << end_color
     end
     
     console_output << "\r\n"
@@ -168,8 +168,8 @@ def get_console_output(process_list)
   console_output << "\r\n"
   # console_output << "\x1b[38;5;254mTCP connections:\x1b[0m\r\n"
 
-  if connected_count > 0
-    console_output << "#{get_color(CONNECTED_COLOR)}#{connected_count} established#{end_color}, "
+  if listening_count.count
+    console_output << "#{get_color(LISTENING_COLOR)}#{listening_count.count} listening#{end_color}, "
   end
   if waiting_to_be_closed_count > 0
     console_output << "#{get_color(WAITING_TO_BE_CLOSED_COLOR)}#{waiting_to_be_closed_count} closing#{end_color}, "
@@ -177,8 +177,8 @@ def get_console_output(process_list)
   if closed_count > 0
     console_output << "#{get_color(CLOSED_COLOR)}#{closed_count} closed#{end_color}, "
   end
-  if listening_count.count
-    console_output << "#{get_color(LISTENING_COLOR)}#{listening_count.count} listening #{end_color}"
+  if connected_count > 0
+    console_output << "#{get_color(CONNECTED_COLOR)}#{connected_count} established#{end_color}"
   end
 
   return console_output
